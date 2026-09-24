@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {randomBytes} from 'node:crypto';
+import {seal,open} from '../supabase/functions/rhythm-api/crypto.ts';
+const key=randomBytes(32).toString('base64'),data={title:'Private journal',kind:'note',done:true};
+const one=await seal(data,key,'user-a:note-1'),two=await seal(data,key,'user-a:note-1');
+assert.notEqual(one,two);assert(!one.includes('Private journal'));assert.deepEqual(await open(one,key,'user-a:note-1'),data);
+await assert.rejects(()=>open(one,key,'user-b:note-1'));
+await assert.rejects(()=>open(one,randomBytes(32).toString('base64'),'user-a:note-1'));
+const damaged=JSON.parse(one);const bytes=Buffer.from(damaged.data,'base64');bytes[0]^=1;damaged.data=bytes.toString('base64');await assert.rejects(()=>open(JSON.stringify(damaged),key,'user-a:note-1'));
+console.log('PASS: AES-256-GCM round trip, randomized ciphertext, user/record binding, incorrect key rejection, tamper rejection.');

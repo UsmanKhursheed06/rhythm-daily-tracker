@@ -1,0 +1,5 @@
+const enc=new TextEncoder(),dec=new TextDecoder();
+const b64=(bytes:Uint8Array)=>btoa(String.fromCharCode(...bytes));
+const un64=(text:string)=>Uint8Array.from(atob(text),c=>c.charCodeAt(0));
+export async function seal(value:unknown,secret:string,context:string){const key=await crypto.subtle.importKey('raw',un64(secret),'AES-GCM',false,['encrypt']);const iv=crypto.getRandomValues(new Uint8Array(12));const bytes=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:enc.encode(context)},key,enc.encode(JSON.stringify(value)));return JSON.stringify({v:1,iv:b64(iv),data:b64(new Uint8Array(bytes))});}
+export async function open(text:string,secret:string,context:string){const value=JSON.parse(text);if(value.v!==1)throw new Error('Unsupported encryption version');const key=await crypto.subtle.importKey('raw',un64(secret),'AES-GCM',false,['decrypt']);return JSON.parse(dec.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:un64(value.iv),additionalData:enc.encode(context)},key,un64(value.data))));}

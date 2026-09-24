@@ -1,2 +1,2 @@
-import Tracker from './tracker';
-export default function Home(){ return <Tracker/>; }
+import AuthGate from './auth-gate';
+export default function Home(){return <AuthGate/>}
